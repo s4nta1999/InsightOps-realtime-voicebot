@@ -3,7 +3,7 @@ import { RealtimeAgent } from '@openai/agents/realtime';
 export const virtualSupervisorAgent = new RealtimeAgent({
   name: 'virtualSupervisor',
   instructions: `
-    당신은 신한카드 가상 상품 전문가입니다.
+    당신은 하나카드 가상 상품 전문가입니다.
     
     # 답변 원칙
     - 간결하고 핵심만 말하세요 (3-4문장 이내)

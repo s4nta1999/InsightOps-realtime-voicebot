@@ -12,6 +12,82 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = prisma;
 }
 
+// 주민번호 파싱 함수
+function parseResidentNumber(front6: string, back1: string) {
+  // 앞 6자리: YYMMDD (년월일)
+  // 뒷 1자리: 성별코드 (1,2: 1900년대, 3,4: 2000년대)
+  
+  const year = parseInt(front6.substring(0, 2));
+  const genderCode = parseInt(back1);
+  
+  // 성별 판별
+  const gender = (genderCode === 1 || genderCode === 3) ? "남자" : "여자";
+  
+  // 출생년도 계산
+  let birthYear;
+  if (genderCode === 1 || genderCode === 2) {
+    birthYear = 1900 + year;
+  } else {
+    birthYear = 2000 + year;
+  }
+  
+  // 현재 연도 기준 나이 계산
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - birthYear;
+  
+  // 연령대 계산
+  const ageGroup = Math.floor(age / 10) * 10;
+  const ageGroupStr = `${ageGroup}대`;
+  
+  return {
+    gender,
+    age: ageGroupStr,
+    birthYear,
+    fullAge: age
+  };
+}
+
+// 주민번호 정보 추출 함수
+function extractClientInfoFromConversation(conversationContent: string) {
+  // 주민번호 패턴 찾기 (두 번에 나눠서 입력받는 방식)
+  const front6Match = conversationContent.match(/주민번호 앞 6자리[^0-9]*(\d{6})/);
+  const back1Match = conversationContent.match(/주민번호 뒷 1자리[^0-9]*(\d{1})/);
+  
+  // 더 유연한 패턴 매칭 (사용자가 직접 숫자만 말한 경우)
+  const allNumbers = conversationContent.match(/\d+/g);
+  let front6 = '';
+  let back1 = '';
+  
+  if (allNumbers) {
+    // 6자리 숫자 찾기 (앞 6자리)
+    const sixDigitNumbers = allNumbers.filter(num => num.length === 6);
+    if (sixDigitNumbers.length > 0) {
+      front6 = sixDigitNumbers[0];
+    }
+    
+    // 1자리 숫자 찾기 (뒷 1자리)
+    const oneDigitNumbers = allNumbers.filter(num => num.length === 1);
+    if (oneDigitNumbers.length > 0) {
+      back1 = oneDigitNumbers[0];
+    }
+  }
+  
+  // 정규식으로 찾은 값이 있으면 우선 사용
+  if (front6Match && back1Match) {
+    front6 = front6Match[1];
+    back1 = back1Match[1];
+  }
+  
+  if (front6 && back1) {
+    console.log(`🔍 주민번호 추출: ${front6}-${back1}******`);
+    return parseResidentNumber(front6, back1);
+  }
+  
+  // 주민번호를 찾을 수 없는 경우 기본값
+  console.log('⚠️ 주민번호 정보를 찾을 수 없어 기본값 사용');
+  return { gender: "알 수 없음", age: "알 수 없음" };
+}
+
 // 데이터베이스 연결 테스트 함수
 export async function testDatabaseConnection() {
   try {
@@ -36,12 +112,17 @@ export async function saveConsultationToDatabase(data: {
   };
 }) {
   try {
+    // 상담 내용에서 주민번호 정보 추출
+    const clientInfo = extractClientInfoFromConversation(data.consulting_content);
+    
+    console.log(`👤 고객 정보 추출: ${clientInfo.gender}, ${clientInfo.age}`);
+    
     // 상담 기본 정보 저장
     const vocRaw = await prisma.vocRaw.create({
       data: {
         sourceId: data.source_id,
-        clientGender: "남자",
-        clientAge: "40대",
+        clientGender: clientInfo.gender,
+        clientAge: clientInfo.age,
         consultingContent: data.consulting_content,
         consultingDate: data.consulting_date,
         consultingTime: data.consulting_time,
