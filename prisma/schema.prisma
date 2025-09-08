@@ -13,37 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Consultation {
-  id                String   @id @default(cuid())
-  sourceId          String   @unique @map("source_id")
-  consultingContent String   @map("consulting_content")
+model VocRaw {
+  sourceId          String   @id @map("source_id")
   consultingDate    String   @map("consulting_date")
-  consultingTime    String   @map("consulting_time")
+  clientGender      String   @map("client_gender")
+  clientAge         String   @map("client_age")
   consultingTurns   String   @map("consulting_turns")
   consultingLength  Int      @map("consulting_length")
-  sessionId         String   @map("session_id")
-  startTime         DateTime @map("start_time")
-  endTime           DateTime @map("end_time")
-  duration          String
+  consultingContent String   @map("consulting_content")
+  consultingTime    String   @map("consulting_time")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
-  
-  messages          ConsultationMessage[]
 
-  @@map("consultations")
-}
-
-model ConsultationMessage {
-  id             String       @id @default(cuid())
-  consultationId String       @map("consultation_id")
-  messageId      String       @map("message_id")
-  role           String       // 'user' or 'assistant'
-  content        String
-  timestamp      DateTime
-  agent          String?
-  createdAt      DateTime     @default(now()) @map("created_at")
-  
-  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-
-  @@map("consultation_messages")
+  @@map("voc_raw")
 }

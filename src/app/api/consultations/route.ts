@@ -11,9 +11,9 @@ export async function GET(request: NextRequest) {
 
     // 특정 상담 조회
     if (sourceId) {
-      const consultation = await getConsultationById(sourceId);
+      const vocRaw = await getConsultationById(sourceId);
       
-      if (!consultation) {
+      if (!vocRaw) {
         return NextResponse.json(
           { error: "상담 기록을 찾을 수 없습니다" },
           { status: 404 }
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        consultation
+        vocRaw
       });
     }
 

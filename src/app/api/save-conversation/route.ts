@@ -66,13 +66,6 @@ export async function POST(request: NextRequest) {
         end_time: endDate.toISOString(),
         duration: calculateDuration(startTime, endTime)
       },
-      messages: messages.map((msg: any) => ({
-        id: msg.id || Date.now().toString(),
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content || msg.text || '',
-        timestamp: msg.timestamp || new Date().toISOString(),
-        agent: msg.agent || (msg.role === 'assistant' ? 'virtualChat' : undefined)
-      }))
     };
 
     // 저장 방식 선택
@@ -88,7 +81,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 데이터베이스에 저장
-        const savedConsultation = await saveConsultationToDatabase(conversationData);
+        const savedVocRaw = await saveConsultationToDatabase(conversationData);
         
         console.log(`✅ 데이터베이스 저장 완료: ${conversationData.source_id}`);
 
@@ -96,7 +89,7 @@ export async function POST(request: NextRequest) {
           success: true,
           message: "상담 기록이 데이터베이스에 성공적으로 저장되었습니다",
           storage_type: "database",
-          consultation_id: savedConsultation.id,
+          consultation_id: savedVocRaw.sourceId,
           source_id: conversationData.source_id,
           consulting_turns: conversationData.metadata.consulting_turns,
           consulting_length: conversationData.metadata.consulting_length,
