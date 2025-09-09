@@ -21,7 +21,7 @@ model VocRaw {
   consultingTurns   Int      @map("consulting_turns")
   consultingLength  Int      @map("consulting_length")
   consultingContent String   @map("consulting_content") @db.Text
-  consultingTime    DateTime @map("consulting_time")
+  consultingTime    DateTime? @map("consulting_time") // NULL 허용으로 변경
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 

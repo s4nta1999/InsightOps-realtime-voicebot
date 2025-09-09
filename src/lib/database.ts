@@ -157,26 +157,45 @@ export async function getConsultationById(sourceId: string) {
   }
 }
 
-// 모든 상담 데이터 조회 함수 (페이지네이션)
+// 모든 상담 데이터 조회 함수 (페이지네이션) - NULL 값 처리
 export async function getAllConsultations(page: number = 1, limit: number = 10) {
   try {
     console.log(`📋 전체 상담 데이터 조회 시작: page=${page}, limit=${limit}`);
     const skip = (page - 1) * limit;
     
     console.log(`🔍 Prisma 쿼리 실행: skip=${skip}, take=${limit}`);
-    const [vocRaws, total] = await Promise.all([
-      prisma.vocRaw.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.vocRaw.count()
-    ]);
+    
+    // Raw SQL을 사용하여 NULL 값 처리
+    const result = await prisma.$queryRaw`
+      SELECT 
+        source_id,
+        consulting_date,
+        client_gender,
+        client_age,
+        consulting_turns,
+        consulting_length,
+        consulting_content,
+        CASE 
+          WHEN consulting_time = '0000-00-00 00:00:00' THEN NULL 
+          ELSE consulting_time 
+        END as consulting_time,
+        created_at,
+        updated_at
+      FROM voc_raw 
+      ORDER BY created_at DESC 
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+    
+    const totalResult = await prisma.$queryRaw`
+      SELECT COUNT(*) as total FROM voc_raw
+    `;
+    
+    const total = Number((totalResult as any)[0].total);
 
-    console.log(`✅ 상담 데이터 조회 완료: ${vocRaws.length}개 조회, 총 ${total}개`);
+    console.log(`✅ 상담 데이터 조회 완료: ${(result as any).length}개 조회, 총 ${total}개`);
 
     return {
-      vocRaws,
+      vocRaws: result,
       total,
       page,
       limit,
