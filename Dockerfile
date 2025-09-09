@@ -9,7 +9,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # 의존성 설치 (빌드용 dev 의존성 포함)
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 
 # Prisma 클라이언트 생성
 RUN npx prisma generate

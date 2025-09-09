@@ -7,48 +7,51 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://voicebot_user:voicebot_password@voicebot-db:5432/voicebot_db?schema=public
+      - DATABASE_URL=mysql://mysqladmin:Strongpassword%40@insightops-voicebot-server.mysql.database.azure.com:3306/voicebot_db?charset=utf8mb4&sslmode=required
       - STORAGE_MODE=production
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    depends_on:
-      - voicebot-db
+    # depends_on:
+    #   - voicebot-db  # Azure MySQL 사용으로 로컬 DB 불필요
     volumes:
       - ./conversations:/app/conversations  # 개발용 파일 저장 폴더
     networks:
       - voicebot-network
 
-  # PostgreSQL 데이터베이스
+  # MySQL 데이터베이스
   voicebot-db:
-    image: postgres:15-alpine
+    image: mysql:8.0
     restart: always
     environment:
-      - POSTGRES_DB=voicebot_db
-      - POSTGRES_USER=voicebot_user
-      - POSTGRES_PASSWORD=voicebot_password
+      - MYSQL_DATABASE=voicebot_db
+      - MYSQL_USER=voicebot_user
+      - MYSQL_PASSWORD=voicebot_password
+      - MYSQL_ROOT_PASSWORD=Strongpassword!
     ports:
-      - "5433:5432"
+      - "3307:3306"
     volumes:
-      - voicebot_postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # 초기 스키마
+      - voicebot_mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
       - voicebot-network
 
-  # pgAdmin (데이터베이스 관리용 - 선택사항)
-  pgadmin:
-    image: dpage/pgadmin4:latest
+  # phpMyAdmin (데이터베이스 관리용 - 선택사항)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
     restart: always
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@voicebot.com
-      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PMA_HOST=voicebot-db
+      - PMA_PORT=3306
+      - PMA_USER=voicebot_user
+      - PMA_PASSWORD=voicebot_password
     ports:
-      - "8081:80"
+      - "8082:80"
     depends_on:
       - voicebot-db
     networks:
       - voicebot-network
 
 volumes:
-  voicebot_postgres_data:
+  voicebot_mysql_data:
 
 networks:
   voicebot-network:

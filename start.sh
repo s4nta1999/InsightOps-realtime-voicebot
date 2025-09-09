@@ -17,10 +17,10 @@ if [ "$STORAGE_MODE" = "production" ]; then
   
   if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
     until nc -z $DB_HOST $DB_PORT; do
-      echo "PostgreSQL이 준비될 때까지 대기 중... ($DB_HOST:$DB_PORT)"
+      echo "MySQL이 준비될 때까지 대기 중... ($DB_HOST:$DB_PORT)"
       sleep 2
     done
-    echo "✅ PostgreSQL 연결 확인됨"
+    echo "✅ MySQL 연결 확인됨"
     
     # 데이터베이스 마이그레이션 실행
     echo "🔄 데이터베이스 마이그레이션 실행 중..."

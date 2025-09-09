@@ -41,5 +41,20 @@ yarn-error.log*
 next-env.d.ts
 todo.md
 
-
+# prisma
 /src/generated/prisma
+
+# data files (already loaded to Azure MySQL)
+/data/
+*.sql
+*.py
+
+# temporary files
+backup_*
+convert_*
+load_*
+mysql_*
+voc_raw_*
+
+# conversations (development only)
+/conversations/
