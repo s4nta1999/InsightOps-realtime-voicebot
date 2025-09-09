@@ -145,9 +145,11 @@ export async function saveConsultationToDatabase(data: {
 // 상담 데이터 조회 함수
 export async function getConsultationById(sourceId: string) {
   try {
+    console.log(`🔍 상담 데이터 조회 시작: ${sourceId}`);
     const vocRaw = await prisma.vocRaw.findUnique({
       where: { sourceId },
     });
+    console.log(`✅ 상담 데이터 조회 완료: ${sourceId}`, vocRaw ? 'found' : 'not found');
     return vocRaw;
   } catch (error) {
     console.error('❌ 상담 데이터 조회 실패:', error);
@@ -158,8 +160,10 @@ export async function getConsultationById(sourceId: string) {
 // 모든 상담 데이터 조회 함수 (페이지네이션)
 export async function getAllConsultations(page: number = 1, limit: number = 10) {
   try {
+    console.log(`📋 전체 상담 데이터 조회 시작: page=${page}, limit=${limit}`);
     const skip = (page - 1) * limit;
     
+    console.log(`🔍 Prisma 쿼리 실행: skip=${skip}, take=${limit}`);
     const [vocRaws, total] = await Promise.all([
       prisma.vocRaw.findMany({
         skip,
@@ -168,6 +172,8 @@ export async function getAllConsultations(page: number = 1, limit: number = 10) 
       }),
       prisma.vocRaw.count()
     ]);
+
+    console.log(`✅ 상담 데이터 조회 완료: ${vocRaws.length}개 조회, 총 ${total}개`);
 
     return {
       vocRaws,
@@ -178,6 +184,11 @@ export async function getAllConsultations(page: number = 1, limit: number = 10) 
     };
   } catch (error) {
     console.error('❌ 상담 데이터 조회 실패:', error);
+    console.error('❌ 오류 상세:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
     throw error;
   }
 }
