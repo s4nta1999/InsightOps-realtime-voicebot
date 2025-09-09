@@ -160,7 +160,7 @@ function calculateDuration(startTime: string, endTime: string): string {
 }
 
 function generateTextFormat(data: ConversationData): string {
-  let text = `=== 신한카드 가상 상담 기록 ===\n\n`;
+  let text = `=== 하나카드 가상 상담 기록 ===\n\n`;
   text += `상담 ID: ${data.source_id}\n`;
   text += `상담 날짜: ${data.consulting_date}\n`;
   text += `상담 시간: ${data.consulting_time}\n`;

@@ -1,6 +1,6 @@
 # 🎙️ InsightOps Realtime Voicebot
 
-> **실시간 음성 상담 서비스** - OpenAI Realtime API를 활용한 신한카드 가상 상담원 시스템
+> **실시간 음성 상담 서비스** - OpenAI Realtime API를 활용한 하나카드 가상 상담원 시스템
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://hub.docker.com/r/s4nta1207/voicebot-service)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
@@ -142,7 +142,7 @@ CREATE TABLE voc_raw (
   "client_age": 25,
   "consulting_turns": 8,
   "consulting_length": 180,
-  "consulting_content": "상담원: 안녕하세요! 신한카드 상담원입니다.\n고객: 안녕하세요. 카드 추천해주세요.\n상담원: 주민번호 앞 6자리를 알려주세요.\n고객: 991207\n상담원: 주민번호 뒷 1자리를 알려주세요.\n고객: 1\n상담원: 감사합니다. 25세 남성분이시군요...",
+  "consulting_content": "상담원: 안녕하세요! 하나카드 상담원입니다.\n고객: 안녕하세요. 카드 추천해주세요.\n상담원: 주민번호 앞 6자리를 알려주세요.\n고객: 991207\n상담원: 주민번호 뒷 1자리를 알려주세요.\n고객: 1\n상담원: 감사합니다. 25세 남성분이시군요...",
   "consulting_time": "2025-09-08T14:30:00.000Z",
   "created_at": "2025-09-08T14:30:00.000Z",
   "updated_at": "2025-09-08T14:33:00.000Z"
