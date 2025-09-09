@@ -1,5 +1,5 @@
-# Node.js 18 기반 이미지 사용
-FROM node:18-alpine AS base
+# 멀티플랫폼 빌드를 위한 최적화된 Dockerfile
+FROM --platform=$BUILDPLATFORM node:18-alpine AS base
 
 # 작업 디렉토리 설정
 WORKDIR /app
