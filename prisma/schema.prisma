@@ -15,13 +15,13 @@ datasource db {
 
 model VocRaw {
   sourceId          String   @id @map("source_id")
-  consultingDate    String   @map("consulting_date")
-  clientGender      String   @map("client_gender")
-  clientAge         String   @map("client_age")
-  consultingTurns   String   @map("consulting_turns")
+  consultingDate    DateTime @map("consulting_date")
+  clientGender      String   @map("client_gender") // "남자", "여자"
+  clientAge         Int      @map("client_age") // 연령대 (20, 30, 40, 50, 60)
+  consultingTurns   Int      @map("consulting_turns")
   consultingLength  Int      @map("consulting_length")
   consultingContent String   @map("consulting_content")
-  consultingTime    String   @map("consulting_time")
+  consultingTime    DateTime @map("consulting_time")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 

@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+    container_name: hanacard-postgres
+    environment:
+      POSTGRES_DB: hanacard_db
+      POSTGRES_USER: hanacard_user
+      POSTGRES_PASSWORD: hanacard_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hanacard_user -d hanacard_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 마이크로서비스
+  microservice-classification:
+    image: s4nta1207/hanacard-classification:latest
+    container_name: hanacard-classification
+    ports:
+      - "8082:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=docker
+      # PostgreSQL 연결 정보
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/hanacard_db
+      - SPRING_DATASOURCE_USERNAME=hanacard_user
+      - SPRING_DATASOURCE_PASSWORD=hanacard_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 데이터 적재 서비스 (Python)
+  data-loader:
+    image: python:3.11-slim
+    container_name: hanacard-data-loader
+    volumes:
+      - ./data:/app/data
+      - ./data/load_sample_data.py:/app/load_sample_data.py
+    working_dir: /app
+    command: >
+      sh -c "
+        pip install requests &&
+        echo '⏳ 서비스 시작 대기 중...' &&
+        sleep 60 &&
+        echo '🚀 데이터 적재 시작' &&
+        python load_sample_data.py --max-files 10 --delay 0.2
+      "
+    depends_on:
+      microservice-classification:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:

@@ -113,6 +113,60 @@ chmod +x deploy.sh
 - **메시지**: 221,632개
 - **데이터베이스**: PostgreSQL 15
 
+### **데이터베이스 스키마**
+
+```sql
+CREATE TABLE voc_raw (
+  source_id          text PRIMARY KEY,
+  consulting_date    timestamp NOT NULL,
+  client_gender      text NOT NULL,        -- "남자", "여자"
+  client_age         integer NOT NULL,     -- 연령대 (20, 30, 40, 50, 60)
+  consulting_turns   integer NOT NULL,     -- 대화 턴 수
+  consulting_length  integer NOT NULL,     -- 상담 길이 (초)
+  consulting_content text NOT NULL,        -- 전체 대화 내용
+  consulting_time    timestamp NOT NULL,   -- 상담 시작 시간
+  created_at         timestamp DEFAULT now(),
+  updated_at         timestamp DEFAULT now()
+);
+```
+
+### **데이터 저장 예시**
+
+#### **상담 진행 시 자동 저장되는 데이터:**
+
+```json
+{
+  "source_id": "consultation_20250908_001",
+  "consulting_date": "2025-09-08T00:00:00.000Z",
+  "client_gender": "남자",
+  "client_age": 25,
+  "consulting_turns": 8,
+  "consulting_length": 180,
+  "consulting_content": "상담원: 안녕하세요! 신한카드 상담원입니다.\n고객: 안녕하세요. 카드 추천해주세요.\n상담원: 주민번호 앞 6자리를 알려주세요.\n고객: 991207\n상담원: 주민번호 뒷 1자리를 알려주세요.\n고객: 1\n상담원: 감사합니다. 25세 남성분이시군요...",
+  "consulting_time": "2025-09-08T14:30:00.000Z",
+  "created_at": "2025-09-08T14:30:00.000Z",
+  "updated_at": "2025-09-08T14:33:00.000Z"
+}
+```
+
+#### **주민번호 기반 자동 정보 추출:**
+
+| 주민번호 | 성별 | 연령대 | DB 저장값 |
+|----------|------|--------|-----------|
+| `991207-1` | 남자 | 25세 | `gender: "남자"`, `age: 20` |
+| `850315-2` | 여자 | 39세 | `gender: "여자"`, `age: 30` |
+| `030421-3` | 남자 | 21세 | `gender: "남자"`, `age: 20` |
+
+#### **API를 통한 데이터 조회:**
+
+```bash
+# 모든 상담 기록 조회
+curl http://localhost:3001/api/consultations
+
+# 특정 상담 조회
+curl http://localhost:3001/api/consultations?source_id=consultation_20250908_001
+```
+
 ### **pgAdmin 접속**
 - **URL**: http://localhost:8081
 - **이메일**: admin@voicebot.com

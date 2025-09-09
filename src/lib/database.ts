@@ -20,7 +20,7 @@ function parseResidentNumber(front6: string, back1: string) {
   const year = parseInt(front6.substring(0, 2));
   const genderCode = parseInt(back1);
   
-  // 성별 판별
+  // 성별 판별 (String: "남자", "여자")
   const gender = (genderCode === 1 || genderCode === 3) ? "남자" : "여자";
   
   // 출생년도 계산
@@ -35,13 +35,12 @@ function parseResidentNumber(front6: string, back1: string) {
   const currentYear = new Date().getFullYear();
   const age = currentYear - birthYear;
   
-  // 연령대 계산
+  // 연령대 계산 (Int: 20, 30, 40, 50, 60)
   const ageGroup = Math.floor(age / 10) * 10;
-  const ageGroupStr = `${ageGroup}대`;
   
   return {
     gender,
-    age: ageGroupStr,
+    age: ageGroup,
     birthYear,
     fullAge: age
   };
@@ -85,7 +84,7 @@ function extractClientInfoFromConversation(conversationContent: string) {
   
   // 주민번호를 찾을 수 없는 경우 기본값
   console.log('⚠️ 주민번호 정보를 찾을 수 없어 기본값 사용');
-  return { gender: "알 수 없음", age: "알 수 없음" };
+  return { gender: "남자", age: 30 }; // 기본값: 남자, 30대
 }
 
 // 데이터베이스 연결 테스트 함수
@@ -115,7 +114,11 @@ export async function saveConsultationToDatabase(data: {
     // 상담 내용에서 주민번호 정보 추출
     const clientInfo = extractClientInfoFromConversation(data.consulting_content);
     
-    console.log(`👤 고객 정보 추출: ${clientInfo.gender}, ${clientInfo.age}`);
+    console.log(`👤 고객 정보 추출: ${clientInfo.gender}, ${clientInfo.age}대`);
+    
+    // 날짜/시간 변환
+    const consultingDate = new Date(data.consulting_date);
+    const consultingTime = new Date(`1970-01-01T${data.consulting_time}`);
     
     // 상담 기본 정보 저장
     const vocRaw = await prisma.vocRaw.create({
@@ -124,9 +127,9 @@ export async function saveConsultationToDatabase(data: {
         clientGender: clientInfo.gender,
         clientAge: clientInfo.age,
         consultingContent: data.consulting_content,
-        consultingDate: data.consulting_date,
-        consultingTime: data.consulting_time,
-        consultingTurns: data.metadata.consulting_turns,
+        consultingDate: consultingDate,
+        consultingTime: consultingTime,
+        consultingTurns: parseInt(data.metadata.consulting_turns),
         consultingLength: data.metadata.consulting_length,
       },
     });
