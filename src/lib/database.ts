@@ -99,7 +99,7 @@ export async function testDatabaseConnection() {
   }
 }
 
-// 상담 데이터 저장 함수
+// 상담 데이터 저장 함수 - consulting_time 제거
 export async function saveConsultationToDatabase(data: {
   source_id: string;
   consulting_content: string;
@@ -116,11 +116,10 @@ export async function saveConsultationToDatabase(data: {
     
     console.log(`👤 고객 정보 추출: ${clientInfo.gender}, ${clientInfo.age}대`);
     
-    // 날짜/시간 변환
+    // 날짜 변환
     const consultingDate = new Date(data.consulting_date);
-    const consultingTime = new Date();
     
-    // 상담 기본 정보 저장
+    // 상담 기본 정보 저장 (consulting_time 제거)
     const vocRaw = await prisma.vocRaw.create({
       data: {
         sourceId: data.source_id,
@@ -128,7 +127,6 @@ export async function saveConsultationToDatabase(data: {
         clientAge: clientInfo.age,
         consultingContent: data.consulting_content,
         consultingDate: consultingDate,
-        consultingTime: consultingTime,
         consultingTurns: parseInt(data.metadata.consulting_turns),
         consultingLength: data.metadata.consulting_length,
       },
@@ -142,25 +140,12 @@ export async function saveConsultationToDatabase(data: {
   }
 }
 
-// 상담 데이터 조회 함수 - 단순화
+// 상담 데이터 조회 함수
 export async function getConsultationById(sourceId: string) {
   try {
     console.log(`🔍 상담 데이터 조회 시작: ${sourceId}`);
-    // consulting_time 필드를 제외하고 조회
     const vocRaw = await prisma.vocRaw.findUnique({
       where: { sourceId },
-      select: {
-        sourceId: true,
-        consultingDate: true,
-        clientGender: true,
-        clientAge: true,
-        consultingTurns: true,
-        consultingLength: true,
-        consultingContent: true,
-        createdAt: true,
-        updatedAt: true,
-        // consulting_time 제외
-      }
     });
     console.log(`✅ 상담 데이터 조회 완료: ${sourceId}`, vocRaw ? 'found' : 'not found');
     return vocRaw;
@@ -170,7 +155,7 @@ export async function getConsultationById(sourceId: string) {
   }
 }
 
-// 모든 상담 데이터 조회 함수 - consulting_time 제외
+// 모든 상담 데이터 조회 함수
 export async function getAllConsultations(page: number = 1, limit: number = 10) {
   try {
     console.log(`📋 전체 상담 데이터 조회 시작: page=${page}, limit=${limit}`);
@@ -178,24 +163,11 @@ export async function getAllConsultations(page: number = 1, limit: number = 10) 
     
     console.log(`🔍 Prisma 쿼리 실행: skip=${skip}, take=${limit}`);
     
-    // consulting_time 필드를 제외하고 조회
     const [vocRaws, total] = await Promise.all([
       prisma.vocRaw.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        select: {
-          sourceId: true,
-          consultingDate: true,
-          clientGender: true,
-          clientAge: true,
-          consultingTurns: true,
-          consultingLength: true,
-          consultingContent: true,
-          createdAt: true,
-          updatedAt: true,
-          // consulting_time 제외
-        }
       }),
       prisma.vocRaw.count()
     ]);
