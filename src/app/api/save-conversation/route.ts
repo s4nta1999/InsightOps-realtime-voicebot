@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     // 저장 모드 확인 (환경변수)
     const storageMode = process.env.STORAGE_MODE || 'development';
+    console.log(`🔧 저장 모드: ${storageMode}`);
 
     // 상담 내용 생성 (전체 대화를 하나의 텍스트로)
     const consultingContent = messages.map((msg: any) => {
@@ -68,10 +69,12 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log(`📝 상담 데이터 준비 완료: ${conversationData.source_id}, 턴 수: ${conversationData.metadata.consulting_turns}`);
+
     // 저장 방식 선택
     if (storageMode === 'production') {
-      // PostgreSQL에 저장
-      console.log('💾 PostgreSQL에 상담 기록 저장 중...');
+      // MySQL에 저장
+      console.log('💾 MySQL에 상담 기록 저장 중...');
       
       try {
         // 데이터베이스 연결 확인
