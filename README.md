@@ -81,7 +81,7 @@ docker-compose down
 docker run -d \
   -p 3001:3001 \
   -e OPENAI_API_KEY="your-openai-api-key" \
-  -e DATABASE_URL="postgresql://voicebot_user:voicebot_password@host.docker.internal:5433/voicebot_db" \
+  -e DATABASE_URL="your-database-url" \
   -e STORAGE_MODE="production" \
   s4nta1207/voicebot-service:latest
 ```
@@ -101,7 +101,7 @@ chmod +x deploy.sh
 | 변수명 | 설명 | 기본값 | 필수 |
 |--------|------|--------|------|
 | `OPENAI_API_KEY` | OpenAI API 키 | - | ✅ |
-| `DATABASE_URL` | PostgreSQL 연결 URL | - | ✅ |
+| `DATABASE_URL` | MySQL 연결 URL | - | ✅ |
 | `STORAGE_MODE` | 저장 모드 (`development`/`production`) | `development` | ❌ |
 | `CLASSIFICATION_SERVICE_URL` | 분류 서비스 URL | - | ❌ |
 | `ENABLE_AUTO_CLASSIFICATION` | 자동 분류 활성화 | `false` | ❌ |
@@ -112,7 +112,7 @@ chmod +x deploy.sh
 | 서비스 | 포트 | 설명 |
 |--------|------|------|
 | Voicebot App | 3001 | 메인 애플리케이션 |
-| PostgreSQL | 5433 | 데이터베이스 |
+| MySQL | 3306 | 데이터베이스 |
 | pgAdmin | 8081 | DB 관리 도구 |
 
 ## 📊 데이터베이스

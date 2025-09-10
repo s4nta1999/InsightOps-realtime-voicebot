@@ -7,7 +7,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=mysql://mysqladmin:Strongpassword%40@insightops-voicebot-server.mysql.database.azure.com:3306/voicebot_db?charset=utf8mb4&sslmode=required
+      - DATABASE_URL=${DATABASE_URL}
       - STORAGE_MODE=production
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     # depends_on:

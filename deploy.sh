@@ -23,38 +23,29 @@ if ! docker info | grep -q "Username"; then
     exit 1
 fi
 
-# 이미지 빌드
-echo "🔨 Docker 이미지 빌드 중..."
-docker build -t ${FULL_IMAGE_NAME} .
+# 멀티플랫폼 빌드 및 푸시
+echo "🔨 멀티플랫폼 Docker 이미지 빌드 및 푸시 중..."
+echo "  - 지원 플랫폼: linux/amd64, linux/arm64"
+docker buildx build --platform linux/amd64,linux/arm64 -t ${FULL_IMAGE_NAME} --push .
 
-# 빌드 성공 확인
+# 빌드 및 푸시 성공 확인
 if [ $? -eq 0 ]; then
-    echo "✅ 이미지 빌드 완료"
+    echo "✅ 멀티플랫폼 이미지 빌드 및 푸시 완료"
 else
-    echo "❌ 이미지 빌드 실패"
+    echo "❌ 멀티플랫폼 이미지 빌드 및 푸시 실패"
     exit 1
 fi
 
-# 이미지 푸시
-echo "📤 Docker Hub에 푸시 중..."
-docker push ${FULL_IMAGE_NAME}
-
-# 푸시 성공 확인
-if [ $? -eq 0 ]; then
-    echo "🎉 푸시 완료!"
-    echo ""
-    echo "📋 사용 방법:"
-    echo "  docker pull ${FULL_IMAGE_NAME}"
-    echo ""
-    echo "🚀 Azure Container Apps 배포:"
-    echo "  az containerapp create \\"
-    echo "    --name voicebot-app \\"
-    echo "    --resource-group your-resource-group \\"
-    echo "    --environment your-container-env \\"
-    echo "    --image ${FULL_IMAGE_NAME} \\"
-    echo "    --target-port 3001 \\"
-    echo "    --env-vars STORAGE_MODE=production DATABASE_URL='your-postgres-url'"
-else
-    echo "❌ 푸시 실패"
-    exit 1
-fi
+echo "🎉 멀티플랫폼 푸시 완료!"
+echo ""
+echo "📋 사용 방법:"
+echo "  docker pull ${FULL_IMAGE_NAME}"
+echo ""
+echo "🚀 Azure Container Apps 배포:"
+echo "  az containerapp create \\"
+echo "    --name voicebot-app \\"
+echo "    --resource-group your-resource-group \\"
+echo "    --environment your-container-env \\"
+echo "    --image ${FULL_IMAGE_NAME} \\"
+echo "    --target-port 3001 \\"
+echo "    --env-vars STORAGE_MODE=production DATABASE_URL='your-mysql-url'"
