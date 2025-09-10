@@ -143,6 +143,7 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
           outputAudioFormat: audioFormat,
           inputAudioTranscription: {
             model: 'gpt-4o-mini-transcribe',
+            language: 'ko',
           },
         },
         outputGuardrails: outputGuardrails ?? [],

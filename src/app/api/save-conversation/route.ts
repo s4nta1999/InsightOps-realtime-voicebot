@@ -115,15 +115,22 @@ export async function POST(request: NextRequest) {
           console.error('❌ 분류 서비스 호출 중 예외 발생:', classificationError);
         }
 
+        // 저장 결과 메시지 결정 (새로 생성 vs 업데이트)
+        const isNewRecord = savedVocRaw.createdAt.getTime() === savedVocRaw.updatedAt.getTime();
+        const storageMessage = isNewRecord 
+          ? "상담 기록이 데이터베이스에 성공적으로 저장되었습니다"
+          : "상담 기록이 데이터베이스에서 성공적으로 업데이트되었습니다";
+
         return NextResponse.json({
           success: true,
-          message: "상담 기록이 데이터베이스에 성공적으로 저장되었습니다",
+          message: storageMessage,
           storage_type: "database",
           consultation_id: savedVocRaw.sourceId,
           source_id: conversationData.source_id,
           consulting_turns: conversationData.metadata.consulting_turns,
           consulting_length: conversationData.metadata.consulting_length,
           duration: conversationData.metadata.duration,
+          is_updated: !isNewRecord,
           // 🔥 분류 결과 추가
           classification: classificationResult?.success ? {
             category: classificationResult.data?.consultingCategory,

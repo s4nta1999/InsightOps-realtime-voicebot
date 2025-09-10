@@ -11,7 +11,69 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = prisma;
 }
 
-// 주민번호 파싱 함수
+// 주민번호 검증 함수
+export function validateResidentNumber(front6: string, back1: string): {
+  isValid: boolean;
+  error?: string;
+  details?: string;
+} {
+  // 앞 6자리 검증 (YYMMDD)
+  if (!/^\d{6}$/.test(front6)) {
+    return { 
+      isValid: false, 
+      error: "앞 6자리는 숫자 6자리여야 합니다",
+      details: `입력된 값: "${front6}"`
+    };
+  }
+  
+  const year = parseInt(front6.substring(0, 2));
+  const month = parseInt(front6.substring(2, 4));
+  const day = parseInt(front6.substring(4, 6));
+  
+  // 월 검증 (01-12)
+  if (month < 1 || month > 12) {
+    return { 
+      isValid: false, 
+      error: "월은 01부터 12까지여야 합니다",
+      details: `입력된 월: ${month}`
+    };
+  }
+  
+  // 일 검증 (01-31)
+  if (day < 1 || day > 31) {
+    return { 
+      isValid: false, 
+      error: "일은 01부터 31까지여야 합니다",
+      details: `입력된 일: ${day}`
+    };
+  }
+  
+  // 뒷 1자리 검증 (1,2,3,4만 허용)
+  if (!/^[1-4]$/.test(back1)) {
+    return { 
+      isValid: false, 
+      error: "뒷 1자리는 1,2,3,4 중 하나여야 합니다",
+      details: `입력된 값: "${back1}"`
+    };
+  }
+  
+  // 나이 범위 검증 (현재 연도 기준)
+  const currentYear = new Date().getFullYear();
+  const birthYear = (parseInt(back1) <= 2) ? 1900 + year : 2000 + year;
+  const age = currentYear - birthYear;
+  
+  if (age < 0 || age > 120) {
+    return { 
+      isValid: false, 
+      error: "올바른 출생년도가 아닙니다",
+      details: `계산된 나이: ${age}세`
+    };
+  }
+  
+  return { isValid: true };
+}
+
+// 주민번호 파싱 함수 (검증 통과 후)
 function parseResidentNumber(front6: string, back1: string) {
   // 앞 6자리: YYMMDD (년월일)
   // 뒷 1자리: 성별코드 (1,2: 1900년대, 3,4: 2000년대)
@@ -45,8 +107,14 @@ function parseResidentNumber(front6: string, back1: string) {
   };
 }
 
-// 주민번호 정보 추출 함수
-export function extractClientInfoFromConversation(conversationContent: string) {
+// 주민번호 정보 추출 함수 (검증 포함)
+export function extractClientInfoFromConversation(conversationContent: string): {
+  gender: string;
+  age: number;
+  isValid: boolean;
+  validationError?: string;
+  extractedNumbers?: { front6: string; back1: string };
+} {
   // 주민번호 패턴 찾기 (두 번에 나눠서 입력받는 방식)
   const front6Match = conversationContent.match(/주민번호 앞 6자리[^0-9]*(\d{6})/);
   const back1Match = conversationContent.match(/주민번호 뒷 1자리[^0-9]*(\d{1})/);
@@ -78,12 +146,39 @@ export function extractClientInfoFromConversation(conversationContent: string) {
   
   if (front6 && back1) {
     console.log(`🔍 주민번호 추출: ${front6}-${back1}******`);
-    return parseResidentNumber(front6, back1);
+    
+    // 주민번호 검증
+    const validation = validateResidentNumber(front6, back1);
+    
+    if (validation.isValid) {
+      const parsedInfo = parseResidentNumber(front6, back1);
+      console.log(`✅ 주민번호 검증 통과: ${parsedInfo.gender}, ${parsedInfo.age}대`);
+      return {
+        ...parsedInfo,
+        isValid: true,
+        extractedNumbers: { front6, back1 }
+      };
+    } else {
+      console.log(`❌ 주민번호 검증 실패: ${validation.error}`);
+      console.log(`📋 상세 정보: ${validation.details}`);
+      return {
+        gender: "남자", // 기본값
+        age: 30, // 기본값
+        isValid: false,
+        validationError: validation.error,
+        extractedNumbers: { front6, back1 }
+      };
+    }
   }
   
-  // 주민번호를 찾을 수 없는 경우 기본값
+  // 주민번호를 찾을 수 없는 경우
   console.log('⚠️ 주민번호 정보를 찾을 수 없어 기본값 사용');
-  return { gender: "남자", age: 30 }; // 기본값: 남자, 30대
+  return { 
+    gender: "남자", 
+    age: 30, 
+    isValid: false,
+    validationError: "주민번호 정보를 찾을 수 없습니다"
+  };
 }
 
 // 데이터베이스 연결 테스트 함수
@@ -98,7 +193,7 @@ export async function testDatabaseConnection() {
   }
 }
 
-// 상담 데이터 저장 함수 - consulting_time 제거
+// 상담 데이터 저장 함수 - Upsert 방식으로 중복 저장 방지
 export async function saveConsultationToDatabase(data: {
   source_id: string;
   consulting_content: string;
@@ -113,14 +208,31 @@ export async function saveConsultationToDatabase(data: {
     // 상담 내용에서 주민번호 정보 추출
     const clientInfo = extractClientInfoFromConversation(data.consulting_content);
     
-    console.log(`👤 고객 정보 추출: ${clientInfo.gender}, ${clientInfo.age}대`);
+    if (clientInfo.isValid) {
+      console.log(`✅ 고객 정보 추출 성공: ${clientInfo.gender}, ${clientInfo.age}대`);
+    } else {
+      console.log(`⚠️ 고객 정보 추출 실패: ${clientInfo.validationError}`);
+      console.log(`📋 기본값 사용: ${clientInfo.gender}, ${clientInfo.age}대`);
+    }
     
     // 날짜 변환
     const consultingDate = new Date(data.consulting_date);
     
-    // 상담 기본 정보 저장 (consulting_time 제거)
-    const vocRaw = await prisma.vocRaw.create({
-      data: {
+    // Upsert 방식으로 저장 (기존 데이터가 있으면 업데이트, 없으면 생성)
+    const vocRaw = await prisma.vocRaw.upsert({
+      where: {
+        sourceId: data.source_id,
+      },
+      update: {
+        clientGender: clientInfo.gender,
+        clientAge: clientInfo.age,
+        consultingContent: data.consulting_content,
+        consultingDate: consultingDate,
+        consultingTurns: parseInt(data.metadata.consulting_turns),
+        consultingLength: data.metadata.consulting_length,
+        updatedAt: new Date(),
+      },
+      create: {
         sourceId: data.source_id,
         clientGender: clientInfo.gender,
         clientAge: clientInfo.age,
@@ -131,7 +243,7 @@ export async function saveConsultationToDatabase(data: {
       },
     });
 
-    console.log(`✅ 상담 데이터 저장 완료: ${data.source_id}`);
+    console.log(`✅ 상담 데이터 저장 완료: ${data.source_id} (${vocRaw.createdAt === vocRaw.updatedAt ? '새로 생성' : '업데이트'})`);
     return vocRaw;
   } catch (error) {
     console.error('❌ 상담 데이터 저장 실패:', error);
