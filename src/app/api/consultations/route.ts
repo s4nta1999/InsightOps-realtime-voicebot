@@ -27,9 +27,33 @@ export async function GET(request: NextRequest) {
       }
 
       console.log(`✅ 상담 기록 조회 성공: ${sourceId}`);
+      
+      // 🔥 분류 결과 조회 추가
+      let classificationResult = null;
+      try {
+        const classificationUrl = process.env.CLASSIFICATION_SERVICE_URL;
+        if (classificationUrl) {
+          console.log(`🤖 분류 결과 조회 시도: ${sourceId}`);
+          const response = await fetch(`${classificationUrl}/api/classify/history?sourceId=${sourceId}`, {
+            timeout: 5000 // 5초 타임아웃
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data && result.data.length > 0) {
+              classificationResult = result.data[0]; // 첫 번째 결과 사용
+              console.log(`✅ 분류 결과 조회 성공: ${classificationResult.consultingCategory}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ 분류 결과 조회 실패:', error);
+      }
+
       return NextResponse.json({
         success: true,
-        vocRaw
+        vocRaw,
+        classification: classificationResult // 🔥 분류 결과 추가
       });
     }
 

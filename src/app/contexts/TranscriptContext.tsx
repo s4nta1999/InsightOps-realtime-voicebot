@@ -155,8 +155,28 @@ export const TranscriptProvider: FC<PropsWithChildren> = ({ children }) => {
       const result = await response.json();
       
       if (response.ok && result.success) {
-        console.log(`대화 저장 성공: ${result.fileName}`);
-        console.log(`총 ${result.totalMessages}개 메시지, 상담시간: ${result.duration}`);
+        console.log(`대화 저장 성공: ${result.fileName || result.consultation_id}`);
+        console.log(`총 ${result.consulting_turns}개 턴, 상담시간: ${result.duration}`);
+        
+        // 🔥 분류 결과 표시
+        if (result.classification) {
+          const { category, confidence, analysis } = result.classification;
+          addTranscriptBreadcrumb(
+            `🎯 상담 분류: ${category} (신뢰도: ${(confidence * 100).toFixed(1)}%)`
+          );
+          addTranscriptBreadcrumb(
+            `📋 문제상황: ${analysis.problem_situation}`
+          );
+          addTranscriptBreadcrumb(
+            `💡 해결방안: ${analysis.solution_approach}`
+          );
+          addTranscriptBreadcrumb(
+            `🎯 예상결과: ${analysis.expected_outcome}`
+          );
+        } else {
+          addTranscriptBreadcrumb('⚠️ 분류 서비스를 사용할 수 없어 자동 분류가 수행되지 않았습니다.');
+        }
+        
         return true;
       } else {
         console.error('대화 저장 실패:', result.error);

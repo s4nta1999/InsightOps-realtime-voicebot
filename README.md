@@ -28,6 +28,12 @@
 - **이전 대화 기억**: 상담원이 이전 대화 내용을 기억하고 연관성 있게 응답
 - **연속성 유지**: "앞서 말씀하신", "이전에 언급하신" 등의 표현으로 대화 연결
 
+### 🤖 **AI 분류 연동** ⭐ NEW
+- **자동 분류**: 상담 종료 시 자동으로 25개 카테고리로 분류
+- **상세 분석**: 문제 상황, 해결 방안, 예상 결과 자동 분석
+- **실시간 피드백**: 분류 결과를 상담 화면에 즉시 표시
+- **마이크로서비스 연동**: Classification 서비스와 완전 연동
+
 ## 🚀 빠른 시작
 
 ### 📋 **필수 요구사항**
@@ -97,6 +103,9 @@ chmod +x deploy.sh
 | `OPENAI_API_KEY` | OpenAI API 키 | - | ✅ |
 | `DATABASE_URL` | PostgreSQL 연결 URL | - | ✅ |
 | `STORAGE_MODE` | 저장 모드 (`development`/`production`) | `development` | ❌ |
+| `CLASSIFICATION_SERVICE_URL` | 분류 서비스 URL | - | ❌ |
+| `ENABLE_AUTO_CLASSIFICATION` | 자동 분류 활성화 | `false` | ❌ |
+| `CLASSIFICATION_TIMEOUT` | 분류 서비스 타임아웃 (ms) | `30000` | ❌ |
 
 ### **포트 설정**
 
@@ -264,6 +273,56 @@ export STORAGE_MODE="production"
 
 - **이슈 리포트**: [GitHub Issues](https://github.com/s4nta1999/InsightOps-realtime-voicebot/issues)
 - **문서**: [Wiki](https://github.com/s4nta1999/InsightOps-realtime-voicebot/wiki)
+
+## 🔗 마이크로서비스 연동
+
+### **분류 서비스 연동** ⭐
+
+이 보이스봇은 InsightOps Classification 서비스와 완전히 연동되어 상담 종료 시 자동으로 분류 및 분석을 수행합니다.
+
+#### 🚀 **연동 플로우**
+
+1. **상담 진행**: 사용자가 보이스봇과 실시간 음성 상담
+2. **상담 종료**: 사용자가 연결을 해제하면 자동으로 대화 저장
+3. **자동 분류**: 저장 완료 후 Classification 서비스로 상담 내용 전송
+4. **AI 분석**: GPT-4o-mini가 25개 카테고리로 분류 및 상세 분석
+5. **결과 표시**: 분류 결과를 실시간으로 상담 화면에 표시
+
+#### 📊 **분류 결과 예시**
+
+상담 종료 후 다음과 같은 분류 결과가 표시됩니다:
+
+```
+🎯 상담 분류: 도난/분실 신청/해제 (신뢰도: 95.2%)
+📋 문제상황: 고객이 카드 도난 신고 후 정지 해제 요청
+💡 해결방안: 신분증 인증 후 카드 정지 해제 처리
+🎯 예상결과: 카드 정상 사용 가능
+```
+
+#### 🔧 **연동 설정**
+
+Azure 환경에서 다음 환경변수를 설정하세요:
+
+```bash
+CLASSIFICATION_SERVICE_URL=https://insightops-classification-d2acc8afftgmhubt.koreacentral-01.azurewebsites.net
+ENABLE_AUTO_CLASSIFICATION=true
+CLASSIFICATION_TIMEOUT=30000
+```
+
+#### 📈 **API 엔드포인트**
+
+- `GET /api/classification-status` - 분류 서비스 상태 확인
+- `GET /api/consultations?sourceId={id}` - 상담 기록 + 분류 결과 조회
+
+#### 🧪 **연동 테스트**
+
+```bash
+# 분류 서비스 상태 확인
+curl https://your-voicebot-service.azurewebsites.net/api/classification-status
+
+# 상담 기록과 분류 결과 조회
+curl https://your-voicebot-service.azurewebsites.net/api/consultations?sourceId=12345678
+```
 
 ---
 

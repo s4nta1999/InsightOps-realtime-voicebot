@@ -47,7 +47,7 @@ function parseResidentNumber(front6: string, back1: string) {
 }
 
 // 주민번호 정보 추출 함수
-function extractClientInfoFromConversation(conversationContent: string) {
+export function extractClientInfoFromConversation(conversationContent: string) {
   // 주민번호 패턴 찾기 (두 번에 나눠서 입력받는 방식)
   const front6Match = conversationContent.match(/주민번호 앞 6자리[^0-9]*(\d{6})/);
   const back1Match = conversationContent.match(/주민번호 뒷 1자리[^0-9]*(\d{1})/);

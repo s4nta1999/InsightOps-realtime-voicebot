@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { saveConsultationToDatabase, testDatabaseConnection } from "@/lib/database";
+import { sendToClassificationService, checkClassificationServiceHealth } from "@/lib/classificationService";
 
 interface ConversationMessage {
   id: string;
@@ -88,6 +89,29 @@ export async function POST(request: NextRequest) {
         
         console.log(`✅ 데이터베이스 저장 완료: ${conversationData.source_id}`);
 
+        // 🔥 새로 추가: 분류 서비스 호출
+        let classificationResult = null;
+        try {
+          console.log('🤖 분류 서비스 호출 시작...');
+          
+          // 분류 서비스 상태 확인
+          const isServiceHealthy = await checkClassificationServiceHealth();
+          if (!isServiceHealthy) {
+            console.warn('⚠️ 분류 서비스가 응답하지 않습니다. 분류를 건너뜁니다.');
+          } else {
+            classificationResult = await sendToClassificationService(conversationData);
+            
+            if (classificationResult.success) {
+              console.log(`🎯 분류 완료: ${classificationResult.data?.consultingCategory}`);
+              console.log(`📊 신뢰도: ${(classificationResult.data?.classification.confidence * 100).toFixed(1)}%`);
+            } else {
+              console.warn(`⚠️ 분류 실패: ${classificationResult.error}`);
+            }
+          }
+        } catch (classificationError) {
+          console.error('❌ 분류 서비스 호출 중 예외 발생:', classificationError);
+        }
+
         return NextResponse.json({
           success: true,
           message: "상담 기록이 데이터베이스에 성공적으로 저장되었습니다",
@@ -96,7 +120,13 @@ export async function POST(request: NextRequest) {
           source_id: conversationData.source_id,
           consulting_turns: conversationData.metadata.consulting_turns,
           consulting_length: conversationData.metadata.consulting_length,
-          duration: conversationData.metadata.duration
+          duration: conversationData.metadata.duration,
+          // 🔥 분류 결과 추가
+          classification: classificationResult?.success ? {
+            category: classificationResult.data?.consultingCategory,
+            confidence: classificationResult.data?.classification.confidence,
+            analysis: classificationResult.data?.analysis
+          } : null
         });
       } catch (dbError) {
         console.error('❌ 데이터베이스 저장 실패, 파일 저장으로 대체:', dbError);
