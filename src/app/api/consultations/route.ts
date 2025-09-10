@@ -34,9 +34,16 @@ export async function GET(request: NextRequest) {
         const classificationUrl = process.env.CLASSIFICATION_SERVICE_URL;
         if (classificationUrl) {
           console.log(`🤖 분류 결과 조회 시도: ${sourceId}`);
+          
+          // AbortController를 사용한 타임아웃 구현
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+          
           const response = await fetch(`${classificationUrl}/api/classify/history?sourceId=${sourceId}`, {
-            timeout: 5000 // 5초 타임아웃
+            signal: controller.signal
           });
+          
+          clearTimeout(timeoutId);
           
           if (response.ok) {
             const result = await response.json();

@@ -103,7 +103,10 @@ export async function POST(request: NextRequest) {
             
             if (classificationResult.success) {
               console.log(`🎯 분류 완료: ${classificationResult.data?.consultingCategory}`);
-              console.log(`📊 신뢰도: ${(classificationResult.data?.classification.confidence * 100).toFixed(1)}%`);
+              const confidence = classificationResult.data?.classification?.confidence;
+              if (confidence !== undefined) {
+                console.log(`📊 신뢰도: ${(confidence * 100).toFixed(1)}%`);
+              }
             } else {
               console.warn(`⚠️ 분류 실패: ${classificationResult.error}`);
             }

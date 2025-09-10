@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { checkClassificationServiceHealth } from "@/lib/classificationService";
 
 // 분류 서비스 상태 확인 API
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log("🔍 분류 서비스 상태 확인 시작");
     

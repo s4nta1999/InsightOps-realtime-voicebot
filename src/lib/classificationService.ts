@@ -126,11 +126,16 @@ export async function checkClassificationServiceHealth(): Promise<boolean> {
   }
 
   try {
+    // AbortController를 사용한 타임아웃 구현
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+    
     const response = await fetch(`${classificationUrl}/api/health`, {
       method: 'GET',
-      timeout: 5000 // 5초 타임아웃
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     console.warn('분류 서비스 상태 확인 실패:', error);

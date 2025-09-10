@@ -2,7 +2,6 @@ import { PrismaClient } from '@prisma/client';
 
 // Prisma 클라이언트 싱글톤 인스턴스
 declare global {
-  // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
 }
 
