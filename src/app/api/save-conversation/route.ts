@@ -18,12 +18,12 @@ interface ConversationData {
   consulting_date: string;
   consulting_time: string;
   metadata: {
-    consulting_turns: string;
+    consulting_turns: number;
     consulting_length: number;
     session_id: string;
     start_time: string;
     end_time: string;
-    duration: string;
+    duration: number;
   };
   messages?: ConversationMessage[];
 }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       consulting_date: startDate.toISOString().split('T')[0],
       consulting_time: startDate.toTimeString().split(' ')[0].slice(0, 5),
       metadata: {
-        consulting_turns: messages.length.toString(),
+        consulting_turns: messages.length,
         consulting_length: consultingContent.length,
         session_id: sessionId,
         start_time: startTime || now.toISOString(),
@@ -190,16 +190,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function calculateDuration(startTime: string, endTime: string): string {
-  if (!startTime || !endTime) return "알 수 없음";
+function calculateDuration(startTime: string, endTime: string): number {
+  if (!startTime || !endTime) return 0;
   
   const start = new Date(startTime);
   const end = new Date(endTime);
   const durationMs = end.getTime() - start.getTime();
-  const minutes = Math.floor(durationMs / 60000);
-  const seconds = Math.floor((durationMs % 60000) / 1000);
   
-  return `${minutes}분 ${seconds}초`;
+  return Math.floor(durationMs / 1000);
 }
 
 function generateTextFormat(data: ConversationData): string {
