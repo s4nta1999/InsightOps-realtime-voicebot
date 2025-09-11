@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const vocRawData = await prisma.vocRaw.findMany({
       skip: offset,
       take: Math.min(limit, maxRecords),
-      orderBy: { createdAt: 'asc' }
+      orderBy: { consultingDate: 'asc' }
     });
     
     console.log(`📊 처리할 데이터: ${vocRawData.length}건`);
