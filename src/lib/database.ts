@@ -302,3 +302,109 @@ export async function getAllConsultations(page: number = 1, limit: number = 10) 
     throw error;
   }
 }
+// VoC 건수 집계 함수
+export async function getVocCountSummary(period: 'daily' | 'weekly' | 'monthly', baseDate: string) {
+  try {
+    console.log(`📊 VoC 건수 집계 시작: period=${period}, baseDate=${baseDate}`);
+    
+    const base = new Date(baseDate);
+    const baseYear = base.getFullYear();
+    const baseMonth = base.getMonth();
+    const baseDateNum = base.getDate();
+    
+    let currentStart: Date;
+    let currentEnd: Date;
+    let previousStart: Date;
+    let previousEnd: Date;
+    
+    if (period === 'daily') {
+      // 일별 집계
+      currentStart = new Date(baseYear, baseMonth, baseDateNum, 0, 0, 0);
+      currentEnd = new Date(baseYear, baseMonth, baseDateNum, 23, 59, 59);
+      
+      // 전일
+      const prevDay = new Date(base);
+      prevDay.setDate(prevDay.getDate() - 1);
+      previousStart = new Date(prevDay.getFullYear(), prevDay.getMonth(), prevDay.getDate(), 0, 0, 0);
+      previousEnd = new Date(prevDay.getFullYear(), prevDay.getMonth(), prevDay.getDate(), 23, 59, 59);
+      
+    } else if (period === 'weekly') {
+      // 주별 집계 (월요일 시작)
+      const dayOfWeek = base.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // 일요일이면 -6, 아니면 1-dayOfWeek
+      
+      const monday = new Date(base);
+      monday.setDate(monday.getDate() + mondayOffset);
+      
+      currentStart = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 0, 0, 0);
+      currentEnd = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6, 23, 59, 59);
+      
+      // 전주
+      const prevMonday = new Date(monday);
+      prevMonday.setDate(prevMonday.getDate() - 7);
+      previousStart = new Date(prevMonday.getFullYear(), prevMonday.getMonth(), prevMonday.getDate(), 0, 0, 0);
+      previousEnd = new Date(prevMonday.getFullYear(), prevMonday.getMonth(), prevMonday.getDate() + 6, 23, 59, 59);
+      
+    } else { // monthly
+      // 월별 집계
+      currentStart = new Date(baseYear, baseMonth, 1, 0, 0, 0);
+      currentEnd = new Date(baseYear, baseMonth + 1, 0, 23, 59, 59); // 다음 달 0일 = 이번 달 마지막 날
+      
+      // 전월
+      previousStart = new Date(baseYear, baseMonth - 1, 1, 0, 0, 0);
+      previousEnd = new Date(baseYear, baseMonth, 0, 23, 59, 59); // 이번 달 0일 = 전달 마지막 날
+    }
+    
+    console.log(`📅 집계 기간 설정:`, {
+      current: { start: currentStart, end: currentEnd },
+      previous: { start: previousStart, end: previousEnd }
+    });
+    
+    // 현재 기간과 이전 기간의 VoC 건수 조회 (중복 제거)
+    const [currentCount, previousCount] = await Promise.all([
+      prisma.vocRaw.count({
+        where: {
+          consultingDate: {
+            gte: currentStart,
+            lte: currentEnd
+          }
+        },
+        distinct: ['sourceId'] // 중복 제거
+      }),
+      prisma.vocRaw.count({
+        where: {
+          consultingDate: {
+            gte: previousStart,
+            lte: previousEnd
+          }
+        },
+        distinct: ['sourceId'] // 중복 제거
+      })
+    ]);
+    
+    // 증감률 계산
+    const deltaPercent = previousCount > 0 
+      ? ((currentCount - previousCount) / previousCount) * 100 
+      : currentCount > 0 ? 100 : 0;
+    
+    console.log(`✅ VoC 건수 집계 완료:`, {
+      period,
+      baseDate,
+      currentCount,
+      previousCount,
+      deltaPercent: deltaPercent.toFixed(1)
+    });
+    
+    return {
+      period,
+      baseDate,
+      currentCount,
+      previousCount,
+      deltaPercent: Math.round(deltaPercent * 10) / 10 // 소수점 첫째자리까지
+    };
+    
+  } catch (error) {
+    console.error('❌ VoC 건수 집계 실패:', error);
+    throw error;
+  }
+}
