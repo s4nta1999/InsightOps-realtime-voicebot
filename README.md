@@ -336,3 +336,291 @@ curl https://your-voicebot-service.azurewebsites.net/api/consultations?sourceId=
 </div>
 # CI/CD 테스트
 # CI/CD 테스트 - Tue Sep  9 17:25:45 KST 2025
+
+## �� API 문서
+
+### **🔍 상담 관리 API**
+
+#### **1. 상담 기록 조회**
+```http
+GET /api/consultations
+```
+
+**쿼리 파라미터:**
+- `page` (optional): 페이지 번호 (기본값: 1)
+- `limit` (optional): 페이지당 항목 수 (기본값: 10)
+- `sourceId` (optional): 특정 상담 ID로 조회
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "vocRaws": [
+    {
+      "sourceId": "12345678",
+      "consultingDate": "2025-01-15T00:00:00.000Z",
+      "clientGender": "남자",
+      "clientAge": 30,
+      "consultingTurns": 8,
+      "consultingLength": 1200,
+      "consultingContent": "상담 내용...",
+      "createdAt": "2025-01-15T14:30:00.000Z",
+      "updatedAt": "2025-01-15T14:33:00.000Z"
+    }
+  ],
+  "total": 100,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 10
+}
+```
+
+#### **2. 특정 상담 조회 (분류 결과 포함)**
+```http
+GET /api/consultations?sourceId=12345678
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "vocRaw": {
+    "sourceId": "12345678",
+    "consultingDate": "2025-01-15T00:00:00.000Z",
+    "clientGender": "남자",
+    "clientAge": 30,
+    "consultingTurns": 8,
+    "consultingLength": 1200,
+    "consultingContent": "상담 내용...",
+    "createdAt": "2025-01-15T14:30:00.000Z",
+    "updatedAt": "2025-01-15T14:33:00.000Z"
+  },
+  "classification": {
+    "consultingCategory": "도난/분실 신청/해제",
+    "classification": {
+      "confidence": 95.2
+    },
+    "analysis": {
+      "problemSituation": "고객이 카드 도난 신고 후 정지 해제 요청",
+      "solution": "신분증 인증 후 카드 정지 해제 처리",
+      "expectedResult": "카드 정상 사용 가능"
+    }
+  }
+}
+```
+
+#### **3. 상담 저장**
+```http
+POST /api/save-conversation
+Content-Type: application/json
+```
+
+**요청 본문:**
+```json
+{
+  "sessionId": "session_12345678",
+  "messages": [
+    {
+      "id": "msg_1",
+      "role": "user",
+      "content": "안녕하세요"
+    },
+    {
+      "id": "msg_2", 
+      "role": "assistant",
+      "content": "안녕하세요! 하나카드 상담원입니다."
+    }
+  ],
+  "startTime": "2025-01-15T14:30:00.000Z",
+  "endTime": "2025-01-15T14:33:00.000Z"
+}
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "message": "상담 기록이 데이터베이스에 성공적으로 저장되었습니다",
+  "storage_type": "database",
+  "consultation_id": "12345678",
+  "source_id": "12345678",
+  "consulting_turns": 8,
+  "consulting_length": 1200,
+  "duration": 180,
+  "is_updated": false,
+  "classification": {
+    "category": "도난/분실 신청/해제",
+    "confidence": 95.2,
+    "analysis": {
+      "problemSituation": "고객이 카드 도난 신고 후 정지 해제 요청",
+      "solution": "신분증 인증 후 카드 정지 해제 처리", 
+      "expectedResult": "카드 정상 사용 가능"
+    }
+  }
+}
+```
+
+### **📊 VoC 집계 API**
+
+#### **4. VoC 건수 집계**
+```http
+POST /api/voc/count-summary
+Content-Type: application/json
+```
+
+**요청 본문:**
+```json
+{
+  "period": "daily|weekly|monthly",
+  "baseDate": "2025-01-15"
+}
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "data": {
+    "period": "daily",
+    "baseDate": "2025-01-15",
+    "currentCount": 1234,
+    "previousCount": 998,
+    "deltaPercent": 23.6
+  }
+}
+```
+
+**집계 방식:**
+- **Daily**: 해당 날짜의 VoC 건수 (00:00:00 ~ 23:59:59)
+- **Weekly**: 해당 주의 VoC 건수 (월요일 시작)
+- **Monthly**: 해당 월의 VoC 건수 (1일 ~ 마지막 날)
+- **중복 제거**: 같은 `sourceId`로 여러 번 저장된 경우 중복 제거
+- **증감률**: 이전 기간 대비 증감률 계산
+
+### **�� 시스템 관리 API**
+
+#### **5. Health Check**
+```http
+GET /api/health
+```
+
+**응답 예시:**
+```json
+{
+  "ok": true,
+  "timestamp": "2025-01-15T14:30:00.000Z",
+  "uptime": 3600.5,
+  "database": {
+    "connected": true,
+    "url": "configured",
+    "storage_mode": "production"
+  },
+  "environment": {
+    "node_env": "production",
+    "websites_port": "3001"
+  }
+}
+```
+
+#### **6. 분류 서비스 상태 확인**
+```http
+GET /api/classification-status
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "service": "classification",
+  "status": "healthy",
+  "url": "https://insightops-classification-d2acc8afftgmhubt.koreacentral-01.azurewebsites.net",
+  "responseTime": 245,
+  "timestamp": "2025-01-15T14:30:00.000Z"
+}
+```
+
+#### **7. 세션 관리**
+```http
+GET /api/session
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "sessionId": "session_12345678",
+  "timestamp": "2025-01-15T14:30:00.000Z"
+}
+```
+
+#### **8. 응답 저장**
+```http
+POST /api/responses
+Content-Type: application/json
+```
+
+**요청 본문:**
+```json
+{
+  "sessionId": "session_12345678",
+  "response": "상담원 응답 내용",
+  "timestamp": "2025-01-15T14:30:00.000Z"
+}
+```
+
+### **🧪 API 테스트 예시**
+
+#### **로컬 환경 테스트:**
+```bash
+# Health Check
+curl http://localhost:3001/api/health
+
+# 상담 목록 조회
+curl http://localhost:3001/api/consultations
+
+# 특정 상담 조회
+curl http://localhost:3001/api/consultations?sourceId=12345678
+
+# VoC 건수 집계 (일별)
+curl -X POST http://localhost:3001/api/voc/count-summary \
+  -H "Content-Type: application/json" \
+  -d '{"period": "daily", "baseDate": "2025-01-15"}'
+
+# VoC 건수 집계 (주별)
+curl -X POST http://localhost:3001/api/voc/count-summary \
+  -H "Content-Type: application/json" \
+  -d '{"period": "weekly", "baseDate": "2025-01-15"}'
+
+# VoC 건수 집계 (월별)
+curl -X POST http://localhost:3001/api/voc/count-summary \
+  -H "Content-Type: application/json" \
+  -d '{"period": "monthly", "baseDate": "2025-01-15"}'
+```
+
+#### **프로덕션 환경 테스트:**
+```bash
+# Azure 배포 환경에서 테스트
+curl https://insightops-voicebot-aud7gfhwc3fsb3h7.koreacentral-01.azurewebsites.net/api/health
+
+curl https://insightops-voicebot-aud7gfhwc3fsb3h7.koreacentral-01.azurewebsites.net/api/consultations
+
+curl -X POST https://insightops-voicebot-aud7gfhwc3fsb3h7.koreacentral-01.azurewebsites.net/api/voc/count-summary \
+  -H "Content-Type: application/json" \
+  -d '{"period": "daily", "baseDate": "2025-01-15"}'
+```
+
+### **�� API 에러 코드**
+
+| HTTP 상태 코드 | 설명 | 해결 방법 |
+|---------------|------|-----------|
+| 200 | 성공 | - |
+| 400 | 잘못된 요청 | 요청 파라미터 확인 |
+| 404 | 리소스 없음 | API 경로 확인 |
+| 500 | 서버 에러 | 서버 로그 확인 |
+
+### **🔒 API 보안**
+
+- **인증**: 현재 인증 없이 접근 가능 (프로덕션 환경에서는 인증 추가 권장)
+- **CORS**: 모든 도메인에서 접근 가능
+- **Rate Limiting**: 현재 제한 없음 (프로덕션 환경에서는 제한 추가 권장)
+
