@@ -63,7 +63,8 @@ export function validateResidentNumber(front6: string, back1: string): {
     ? 1900 + year 
     : 2000 + year;
   
-  const age = currentYear - birthYear;
+  const actualAge = currentYear - birthYear;
+  const age = convertAgeToAgeGroup(actualAge);
   
   if (age < 0 || age > 120) {
     return { 
@@ -80,6 +81,17 @@ export function validateResidentNumber(front6: string, back1: string): {
 }
 
 // 고객 정보 추출 함수 (주민번호 검증 포함)
+// 나이를 연령대로 변환하는 함수
+function convertAgeToAgeGroup(age: number): number {
+  if (age < 20) return 20;  // 10대 → 20대
+  if (age < 30) return 20;  // 20대 → 20대
+  if (age < 40) return 30;  // 30대 → 30대
+  if (age < 50) return 40;  // 40대 → 40대
+  if (age < 60) return 50;  // 50대 → 50대
+  if (age < 70) return 60;  // 60대 → 60대
+  return 70;                // 70대+ → 70대
+}
+
 export function extractClientInfoFromConversation(conversationContent: string): {
   gender: string;
   age: number;
@@ -131,10 +143,11 @@ export function extractClientInfoFromConversation(conversationContent: string): 
     : 2000 + parseInt(front6.substring(0, 2));
   
   const currentYear = new Date().getFullYear();
-  const age = currentYear - birthYear;
+  const actualAge = currentYear - birthYear;
+  const age = convertAgeToAgeGroup(actualAge);
   const gender = (back1 === '1' || back1 === '3') ? "남자" : "여자";
   
-  console.log(`✅ 고객 정보 추출 완료: ${gender}, ${age}세`);
+  console.log(`✅ 고객 정보 추출 완료: ${gender}, ${actualAge}세 → ${age}대`);
   
   return {
     gender,
@@ -175,7 +188,7 @@ export async function saveConsultationToDatabase(conversationData: {
     const clientInfo = extractClientInfoFromConversation(conversationData.consulting_content);
     
     if (clientInfo.isValid) {
-      console.log(`✅ 고객 정보 추출 성공: ${clientInfo.gender}, ${clientInfo.age}세`);
+      console.log(`✅ 고객 정보 추출 성공: ${clientInfo.gender}, ${clientInfo.age}대`);
     } else {
       console.log(`⚠️ 고객 정보 추출 실패: ${clientInfo.validationError} - 기본값 사용`);
     }
