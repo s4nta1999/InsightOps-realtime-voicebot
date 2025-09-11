@@ -1,23 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/database";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log("📊 데이터 분석 시작 (읽기 전용)");
 
     // 1. 전체 데이터 개수
     const totalCount = await prisma.vocRaw.count();
-    
-    // 2. 날짜별 분포 확인
-    const dateDistribution = await prisma.vocRaw.groupBy({
-      by: ['consultingDate'],
-      _count: {
-        sourceId: true
-      },
-      orderBy: {
-        consultingDate: 'asc'
-      }
-    });
 
     // 3. 최신/최오래된 데이터 확인
     const dateRange = await prisma.vocRaw.aggregate({

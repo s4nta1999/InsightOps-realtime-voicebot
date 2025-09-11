@@ -75,8 +75,16 @@ export async function POST(request: NextRequest) {
     });
 
     let currentIndex = 0;
-    const updateResults = [];
-    const errors = [];
+    const updateResults: Array<{
+      sourceId: string;
+      oldDate: string;
+      newDate: string;
+    }> = [];
+    const errors: Array<{
+      batch: number;
+      date: string;
+      error: string;
+    }> = [];
 
     for (let dayIndex = 0; dayIndex < totalDays; dayIndex++) {
       const targetDate = new Date(start);
