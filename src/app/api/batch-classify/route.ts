@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
         
         // 요청 간격 조절 (서버 부하 방지)
         if (i < vocRawData.length - 1) {
-          console.log(`⏳ 1초 대기 중...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log(`⏳ 2초 대기 중...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
       } catch (error) {
